@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { isMobile } from "react-device-detect";
+
 import { ReactComponent as WritingIcon } from '../icon/writing_icon.svg';
 import { ReactComponent as CheckIcon } from '../icon/check_icon.svg';
 
@@ -7,7 +9,7 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
   let colorRgb = randomColorList[(value % 5)];
   
   // boxSize
-  let boxSize = 200;
+  let boxSize = isMobile && window.innerWidth < 500 ? Math.floor(window.innerWidth / 2) : 180;
   
   // menubar Height
   let menuBarHeight = 60; 
@@ -18,9 +20,10 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
     diffY: 0,
     dragging: false,
     styles: {
+      width : boxSize,
+      height: boxSize,
       backgroundColor:  colorRgb, 
       zIndex: zIndexList[value],  
-      border: `1px solid blue`     
     }
   });
   
@@ -39,13 +42,14 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
 
   //1-1. onMouseDown inside the box :: setZIndexList
   const getValue = (e) => {
-    let idx = Number(e.target.getAttribute('data-value'));
+    let idx = Number(e.currentTarget.getAttribute('data-value'));
     let len = zIndexList.length;
     let newArr = zIndexList.map(el => {
       if(el < zIndexList[idx]) return el
       if(el > zIndexList[idx]) return el - 1
       if(el === zIndexList[idx]) return len
     });
+    // isMobile ? console.log('모바일',newArr) : console.log(newArr)
     setZIndexList(newArr);
   } 
 
@@ -53,20 +57,24 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
   const dragStart = (e) => {
     setDrag(true);
     setBoxDragging({
-      diffX: e.clientX - e.currentTarget.getBoundingClientRect().left,
-      diffY: e.clientY - e.currentTarget.getBoundingClientRect().top,
+      diffX: (isMobile ?  e.changedTouches[0].clientX : e.clientX) - e.currentTarget.getBoundingClientRect().left,
+      diffY: (isMobile ?  e.changedTouches[0].clientY : e.clientY) - e.currentTarget.getBoundingClientRect().top,
       dragging: true,
       styles: {
-        backgroundColor:  colorRgb, 
+        width : boxSize,
+        height: boxSize,
+        backgroundColor: colorRgb, 
         left: boxDragging.styles.left,
         top: boxDragging.styles.top,
         zIndex: zIndexList[value]
       }
     })
+    isMobile ? console.log('모바일',e) : console.log( e.clientX)
   } 
 
   //2. onMouseMove ::  boxDragging.dragging === true => 'Can drag Box' / writing === false => 'Can drag Box'
   const dragging = (e) => {
+    isMobile? console.log('e.clientX',e.clientX) : console.log('놉',e.clientX)
     if(boxDragging.dragging && !writing){
       let left = (e.clientX - boxDragging.diffX) < 0 ? 0 
         : ((e.clientX - boxDragging.diffX) > window.innerWidth - boxSize ? window.innerWidth - boxSize : e.clientX - boxDragging.diffX );
@@ -77,6 +85,8 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
         diffY: boxDragging.diffY,
         dragging: boxDragging.dragging,
         styles: {
+          width : boxSize,
+          height: boxSize,
           backgroundColor: colorRgb, 
           left: `${left}px`,
           top: `${top}px`,
@@ -93,6 +103,8 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
       diffY: boxDragging.diffY,
       dragging: false,
       styles: {
+        width : boxSize,
+        height: boxSize,
         backgroundColor:  colorRgb, 
         left: boxDragging.styles.left,
         top:  boxDragging.styles.top,
@@ -108,6 +120,7 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
   4. boxDragging :: setBoxDragging -> boxDragging -> setBoxDragging 
   */
   useEffect(() => {
+    // console.log(zIndexList, orderBoxBtnOnOff, hidden, boxDragging)
     let ele = document.getElementById(value);
     let eleLeft = ele.getBoundingClientRect().left;
     let eleTop = ele.getBoundingClientRect().top;
@@ -116,6 +129,8 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
       diffY: boxDragging.diffY,
       dragging: boxDragging.dragging,
       styles: {
+        width : boxSize,
+        height: boxSize,
         backgroundColor: colorRgb, 
         zIndex: zIndexList[value],
         position: 'relative',
@@ -127,6 +142,8 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
       diffY: boxDragging.diffY,
       dragging: boxDragging.dragging,
       styles: {
+        width : boxSize,
+        height: boxSize,
         backgroundColor:  colorRgb, 
         left: boxDragging.styles.left || eleLeft,
         top: ( boxDragging.styles.top ? ((boxDragging.styles.top+boxSize) > draggableArea.bottom ? (draggableArea.bottom-boxSize):  boxDragging.styles.top) : eleTop ),
@@ -134,8 +151,10 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
         display: !hidden ? 'inline-block' : 'none' ,
       }
     })
-    if(orderBoxBtnOnOff) setOrderBoxBtnOnOff(false);
-  }, [zIndexList, orderBoxBtnOnOff, hidden, boxDragging]);  
+    
+    if(boxDragging.styles.position === 'relative')  { setOrderBoxBtnOnOff(false); }
+    if(orderBoxBtnOnOff) { setOrderBoxBtnOnOff(0); }
+    }, [zIndexList, orderBoxBtnOnOff, hidden]);  
 
   /*
     << onMouseDown inside the box & onMouseMove outside the box >>
@@ -154,6 +173,8 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
           diffY: boxDragging.diffY,
           dragging: boxDragging.dragging,
           styles: {
+            width : boxSize,
+            height: boxSize,
             backgroundColor: colorRgb, 
             left: `${left}px`,
             top: `${top}px`,
@@ -162,6 +183,7 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
         })
       }
     }
+    console.log('어디지?')
     draggingOutBox(mousePos);
   }, [mousePos]);  
 
@@ -178,6 +200,8 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
       diffY: boxDragging.diffY,
       dragging: boxDragging.dragging,
       styles: {
+        width : boxSize,
+        height: boxSize,
         backgroundColor:  colorRgb, 
         left :  (eleLeft+boxSize) > draggableArea.right ? (draggableArea.right-boxSize > 0 ? draggableArea.right-boxSize : 0 ) : boxDragging.styles.left,
         top : (eleTop+boxSize) > draggableArea.bottom ? (draggableArea.bottom-(boxSize+menuBarHeight) > 0 ? draggableArea.bottom-boxSize : `${menuBarHeight}px` ) : boxDragging.styles.top,
@@ -189,21 +213,41 @@ const Draggable = ({ mousePos, setDrag, randomColorList, value, orderBoxBtnOnOff
   
   
   return (
-    <div id={value} className={hidden? 'box hidden' : 'box'} 
-      style={boxDragging.styles} 
-      onMouseDown={(e) => {getValue(e); dragStart(e);}} 
-      onMouseMove={(e) => {dragging(e)}} onMouseUp={() => {dragEnd()}} 
-      data-value={value}
-    >
-      <div className='memoBox' onClick={memoBox} data-value={value}>
-        {writing ? 
-        <CheckIcon className="icon check"  stroke="#00000059" data-value={value}></CheckIcon>
-        : <WritingIcon className="icon" stroke="#00000059"  data-value={value}></WritingIcon> } 
+    <>
+    {isMobile ? 
+      // mobile view (touch) 
+      <div id={value} className={hidden? 'box hidden' : 'box'} data-value={value}
+        style={boxDragging.styles} 
+        onTouchStart={(e)=> {getValue(e); dragStart(e);}}
+        onTouchMove={(e) => {getValue(e); dragStart(e); dragging(e);}} 
+        onTouchEnd={() => {dragEnd()}} 
+      > <div data-value={value} style={{ fontSize: '9px', top: '11px'}} className = 'makeBoxDate'>{boxDateTimeList[value]}</div>
+        <div className='iconBox' style={{ right: '35px' }} onClick={memoBox} data-value={value}>
+          {writing ? 
+          <CheckIcon className="icon check"  stroke="#00000059" data-value={value}></CheckIcon>
+          : <WritingIcon className="icon" stroke="#00000059"  data-value={value}></WritingIcon> } 
+        </div>
+        <div className = 'removeBox' onClick={removeBox} style={{ backgroundColor: 'rgba(0,0,0,0.035)'}} >×</div>
+        <textarea id='memo' style={{ width: (boxSize-20)+'px',  height: (boxSize-40)+'px'}} data-value={value} placeholder='memo' readOnly={!writing}></textarea>
       </div>
-      <div className = 'removeBox' onClick={removeBox}>×</div>
-      <div data-value={value} className = 'makeBoxDate'>{boxDateTimeList[value]}</div>
-      <textarea id='memo' data-value={value} placeholder='memo' readOnly={!writing}></textarea>
-    </div>
+      : 
+      // browser view (mouse - click) 
+      <div id={value} className={hidden? 'box hidden' : 'box'} data-value={value}
+        style={boxDragging.styles} 
+        onMouseDown={(e) => {getValue(e); dragStart(e);}} 
+        onMouseMove={(e) => {dragging(e)}} 
+        onMouseUp={() => {dragEnd()}} 
+      > <div data-value={value} style={{ fontSize: '8px', top: '7px'}} className = 'makeBoxDate'>{boxDateTimeList[value]}</div>
+        <div className='iconBox' style={{ right: '30px' }} onClick={memoBox} data-value={value}>
+          {writing ? 
+          <CheckIcon className="icon check"  stroke="#00000059" data-value={value}></CheckIcon>
+          : <WritingIcon className="icon" stroke="#00000059"  data-value={value}></WritingIcon> } 
+        </div>
+        <div className = 'removeBox' onClick={removeBox} >×</div>
+        <textarea id='memo' style={{ width: (boxSize-20)+'px',  height: (boxSize-40)+'px'}} data-value={value} placeholder='memo' readOnly={!writing}></textarea>
+      </div>
+    }
+    </>
   )
 }
 

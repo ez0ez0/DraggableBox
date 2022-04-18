@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isMobile } from "react-device-detect";
 import Draggable from './components/Draggable';
 import Box from './components/Box';
 import './App.css';
@@ -24,17 +25,18 @@ const App = () =>{
   }
 
   const orderBoxBtnSwitch = () => {
-    setOrderBoxBtnOnOff(!orderBoxBtnOnOff);
+    setOrderBoxBtnOnOff(true);
   }
 
+  
 
   return (
       <Draggable drag={drag} setDrag={setDrag} setMousePos={setMousePos} setDraggableArea={setDraggableArea}>
         <div className='menuBar'>
-          <div className='title'>Draggable Box</div>
+          <div className='title'>Draggable</div>
           <div className='menu'>
-            <div className='btn makeBoxBtn' onClick={newBoxArr}>Make box</div>
-            <div className='btn orderBoxBtn' onClick={orderBoxBtnSwitch}>Arrange boxes</div>
+            <div className='btn makeBoxBtn' style={{width: (isMobile? 90 : 150)+'px'}} onClick={newBoxArr}>Make box</div>
+            <div className='btn orderBoxBtn'style={{width: (isMobile? 130 : 150)+'px'}} onClick={orderBoxBtnSwitch}>Arrange boxes</div>
           </div>
         </div>
         {boxList.map((el, idx) => 

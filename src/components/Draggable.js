@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { isMobile } from "react-device-detect";
 const Draggable = ({ drag, setDrag, setMousePos,setDraggableArea, children})=> {
-
   // mouseup outside the box
   const mouseupOutBox = () => {
     setDrag(false)
@@ -9,8 +9,8 @@ const Draggable = ({ drag, setDrag, setMousePos,setDraggableArea, children})=> {
   // mousedown inside the box & mousemove outside the box
   const dragging = (e) => {
     if(drag){
-      let mouseX = e.clientX;
-      let mouseY = e.clientY;
+      let mouseX = isMobile ?  e.changedTouches[0].clientX : e.clientX;
+      let mouseY = isMobile ?  e.changedTouches[0].clientY : e.clientY;
       setMousePos({x: mouseX, y:mouseY})
     }
   }
@@ -20,12 +20,19 @@ const Draggable = ({ drag, setDrag, setMousePos,setDraggableArea, children})=> {
     setDraggableArea(document.getElementById('draggableWrapper').getBoundingClientRect());
   }
   return (
-    <div id='draggableWrapper' className={drag? 'draggableArea pointer' : 'draggableArea'} 
-    onMouseUp={() => {mouseupOutBox()}} 
-    onMouseMove={(e) => {dragging(e)}}
-    >
-      {children}
-    </div>
+    <>
+      { isMobile ? 
+        <div id='draggableWrapper' className={drag? 'draggableArea pointer' : 'draggableArea'}
+        onTouchStart={() => {mouseupOutBox()}} 
+        onTouchMove={(e) => {dragging(e)}}
+        >{children}</div>
+          : 
+        <div id='draggableWrapper' className={drag? 'draggableArea pointer' : 'draggableArea'} 
+        onMouseUp={() => {mouseupOutBox()}} 
+        onMouseMove={(e) => {dragging(e)}}
+        >{children}</div>
+      }
+    </>
   )
 }
 
